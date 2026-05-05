@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Máy Tính Đọc Kết Quả</title>
+
+<!-- PWA Meta Tags -->
+<meta name="application-name" content="Máy Tính">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Máy Tính">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#c4c4c4">
+<meta name="description" content="Máy tính tự đọc kết quả bằng tiếng Việt">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- iOS Icons -->
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root {
+  --num-top:#d8d8d8; --num-bot:#b8b8b8; --num-sh:#858585;
+  --fn-top:#cacdd2;  --fn-bot:#acb0b8;  --fn-sh:#808080;
+  --op-top:#bbbec5;  --op-bot:#a4a8b0;  --op-sh:#787c84;
+  --ac-top:#e87272;  --ac-bot:#c84848;  --ac-sh:#882020;
+  --eq-top:#f5a838;  --eq-bot:#d87018;  --eq-sh:#884800;
+  --gap:7px; --rbtn:13px;
+}
+
+body {
+  background: radial-gradient(ellipse at 50% 30%, #b8b8b8, #888);
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  font-family:'Be Vietnam Pro',sans-serif; overflow:hidden;
+}
+
+/* ── PHONE ── */
+.phone {
+  width:100%; max-width:430px; height:100vh;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.022) 3px,rgba(255,255,255,0.022) 4px),
+    linear-gradient(170deg,#dcdcde 0%,#c6c6c8 35%,#bababb 65%,#c2c2c4 100%);
+  display:flex; flex-direction:column;
+  padding:0 10px 10px; position:relative; overflow:hidden;
+  box-shadow: inset 3px 0 7px rgba(255,255,255,0.5), inset -3px 0 7px rgba(0,0,0,0.2);
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 2px 5px; flex-shrink:0;
+}
+.icon-btn {
+  background:none; border:none; cursor:pointer;
+  font-size:22px; color:#333; padding:5px 8px; border-radius:9px;
+  transition:background 0.12s; -webkit-tap-highlight-color:transparent; line-height:1;
+}
+.icon-btn:active { background:rgba(0,0,0,0.13); transform:scale(0.9); }
+.topbar-title { flex:1; text-align:center; }
+.topbar-title .t1 { font-size:13px; font-weight:800; color:#1e1e1e; letter-spacing:0.6px; }
+.topbar-title .t2 { font-size:9px; font-weight:400; color:#666; letter-spacing:1.8px; margin-top:1px; }
+
+/* ── DISPLAY ── */
+.display-wrap {
+  margin:2px 0 9px;
+  background:linear-gradient(175deg,#6aafb8 0%,#84c6cf 50%,#6aafb8 100%);
+  border-radius:14px; border:2px solid #4e8e97;
+  box-shadow: inset 0 5px 16px rgba(0,0,0,0.26), inset 0 -2px 6px rgba(255,255,255,0.2),
+              0 3px 10px rgba(0,0,0,0.32);
+  padding:10px 15px 10px; flex-shrink:0; position:relative;
+  display:flex; flex-direction:column; gap:0;
+}
+
+/* Zone A – phép tính */
+.zone-a {
+  border-bottom:1px solid rgba(0,0,0,0.14);
+  padding-bottom:7px; margin-bottom:6px;
+}
+.zone-lbl {
+  font-size:9px; font-weight:700; color:rgba(0,0,0,0.32);
+  letter-spacing:1.8px; text-transform:uppercase; margin-bottom:2px;
+}
+.zone-expr-text {
+  font-family:'Roboto Mono',monospace;
+  font-size:14px; color:rgba(0,0,0,0.6);
+  text-align:right; word-break:break-all; min-height:36px; line-height:1.4;
+}
+
+/* Zone B – số */
+.zone-b { margin-bottom:4px; }
+.zone-number {
+  font-family:'Roboto Mono',monospace;
+  font-size:52px; font-weight:300; color:#0a0a0a;
+  text-align:right; line-height:1; word-break:break-all;
+  transition:color 0.22s; transform-origin:right center;
+}
+.zone-number.pop { animation:numPop 0.18s ease-out; }
+@keyframes numPop{0%{transform:scale(1)}50%{transform:scale(1.045)}100%{transform:scale(1)}}
+.zone-number.speaking { color:#003a46; }
+
+/* Zone C – hàng cuối: wave trái | chữ Việt phải */
+.zone-c {
+  display:flex; align-items:center; justify-content:space-between;
+  min-height:22px; margin-top:2px; gap:8px;
+}
+.zone-wave-side { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+.wave { display:none; align-items:center; gap:2px; height:16px; }
+.wave.on { display:flex; }
+.wave span {
+  display:block; width:3px; border-radius:2px; background:#004e5e;
+  animation:wv 0.75s ease-in-out infinite;
+}
+.wave span:nth-child(1){height:4px;animation-delay:0s}
+.wave span:nth-child(2){height:11px;animation-delay:0.1s}
+.wave span:nth-child(3){height:16px;animation-delay:0.2s}
+.wave span:nth-child(4){height:11px;animation-delay:0.3s}
+.wave span:nth-child(5){height:4px;animation-delay:0.4s}
+@keyframes wv{0%,100%{transform:scaleY(0.35)}50%{transform:scaleY(1)}}
+.wave-lbl { display:none; font-size:9px; font-weight:800; color:#004050; letter-spacing:1px; white-space:nowrap; }
+.wave-lbl.on { display:block; }
+.zone-viet-side { display:flex; align-items:baseline; gap:4px; justify-content:flex-end; flex:1; min-width:0; }
+.zone-viet {
+  font-size:12px; font-style:italic; color:rgba(0,0,0,0.38);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  transition:color 0.2s; text-align:right;
+}
+.zone-viet.on { color:#002c38; font-weight:600; }
+.zone-cur { font-size:11px; font-weight:700; color:rgba(0,0,0,0.3); flex-shrink:0; }
+.zone-cur.on { color:#003d4a; }
+
+/* ── BUTTON GRID ── */
+.btn-grid { flex:1; display:flex; flex-direction:column; gap:var(--gap); min-height:0; }
+.btn-row { display:grid; gap:var(--gap); flex:1; }
+.r4 { grid-template-columns:repeat(4,1fr); }
+.r5 { grid-template-columns:repeat(5,1fr); }
+
+.btn {
+  border-radius:var(--rbtn); border:none; cursor:pointer;
+  font-family:'Be Vietnam Pro',sans-serif; font-weight:600; font-size:22px;
+  color:#1a1a1a; position:relative; overflow:hidden;
+  transition:transform 0.07s, filter 0.07s;
+  -webkit-tap-highlight-color:transparent; user-select:none;
+  display:flex; align-items:center; justify-content:center;
+  line-height:1; width:100%; height:100%;
+}
+.btn:active { transform:scale(0.89); filter:brightness(0.83); }
+.btn::after {
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background:radial-gradient(circle at 50% 50%, rgba(255,255,255,0.5) 0%, transparent 68%);
+  opacity:0; transition:opacity 0.22s;
+}
+.btn:active::after { opacity:1; }
+
+/* Number */
+.btn-n {
+  background:linear-gradient(180deg,var(--num-top) 0%,var(--num-bot) 100%);
+  box-shadow:0 5px 0 var(--num-sh),0 6px 9px rgba(0,0,0,0.27),
+    inset 0 1px 0 rgba(255,255,255,0.88),inset 0 -1px 0 rgba(0,0,0,0.07);
+  border:1px solid #b2b2b2;
+  font-size:28px; font-weight:400; font-family:'Roboto Mono',monospace;
+}
+/* Operator ÷ × − + */
+.btn-op {
+  background:linear-gradient(180deg,var(--op-top) 0%,var(--op-bot) 100%);
+  box-shadow:0 5px 0 var(--op-sh),0 6px 9px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.72);
+  border:1px solid #9a9ea6; font-size:26px; color:#111;
+}
+/* Function AC % +/− */
+.btn-fn {
+  background:linear-gradient(180deg,var(--fn-top) 0%,var(--fn-bot) 100%);
+  box-shadow:0 5px 0 var(--fn-sh),0 6px 9px rgba(0,0,0,0.24),
+    inset 0 1px 0 rgba(255,255,255,0.74);
+  border:1px solid #a2a5ac; font-size:17px; font-weight:700; color:#222;
+}
+/* AC red */
+.btn-ac {
+  background:linear-gradient(180deg,var(--ac-top) 0%,var(--ac-bot) 100%);
+  box-shadow:0 5px 0 var(--ac-sh),0 6px 9px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,200,200,0.55);
+  border:1px solid #a02828; color:#fff; font-size:20px; font-weight:800;
+}
+/* Backspace */
+.btn-back {
+  background:linear-gradient(180deg,var(--fn-top) 0%,var(--fn-bot) 100%);
+  box-shadow:0 5px 0 var(--fn-sh),0 6px 9px rgba(0,0,0,0.24),
+    inset 0 1px 0 rgba(255,255,255,0.74);
+  border:1px solid #a2a5ac; color:#333; font-size:21px;
+}
+/* Equals orange */
+.btn-eq {
+  background:linear-gradient(180deg,var(--eq-top) 0%,var(--eq-bot) 100%);
+  box-shadow:0 5px 0 var(--eq-sh),0 6px 9px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,225,130,0.58);
+  border:1px solid #a05808; color:#fff; font-size:32px;
+}
+.btn-eq.speaking-eq { animation:eqpulse 0.55s ease-in-out infinite alternate; }
+@keyframes eqpulse{
+  from{box-shadow:0 5px 0 var(--eq-sh),0 6px 9px rgba(0,0,0,0.35);}
+  to  {box-shadow:0 5px 0 var(--eq-sh),0 10px 30px rgba(216,112,24,0.85);}
+}
+
+/* ── OVERLAY ── */
+.overlay {
+  position:absolute; inset:0; z-index:200;
+  display:flex; flex-direction:column;
+  background:rgba(0,0,0,0); pointer-events:none;
+  transition:background 0.28s;
+}
+.overlay.open { background:rgba(0,0,0,0.5); pointer-events:all; }
+
+.panel {
+  background:#f2f2f4; border-radius:0 0 20px 20px;
+  overflow-y:auto; overflow-x:hidden;
+  transform:translateY(-105%);
+  transition:transform 0.3s cubic-bezier(0.34,1.1,0.64,1);
+  max-height:88vh;
+  box-shadow:0 10px 35px rgba(0,0,0,0.38);
+}
+.overlay.open .panel { transform:translateY(0); }
+
+.panel-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px 11px; border-bottom:1px solid #ddd;
+  background:#e6e6e8; position:sticky; top:0; z-index:1;
+}
+.panel-header h2 { font-size:16px; font-weight:800; color:#1a1a1a; }
+.panel-close {
+  background:#d0d0d2; border:none; cursor:pointer;
+  font-size:13px; color:#444; font-weight:800;
+  width:28px; height:28px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* Settings */
+.s-sec { padding:10px 16px 2px; }
+.s-sec h3 {
+  font-size:10px; font-weight:800; color:#999;
+  letter-spacing:1.6px; text-transform:uppercase; margin-bottom:7px;
+}
+.s-item {
+  display:flex; align-items:center; justify-content:space-between;
+  background:#fff; border-radius:12px; padding:11px 14px;
+  margin-bottom:6px; box-shadow:0 1px 4px rgba(0,0,0,0.07); gap:10px;
+}
+.s-item.col { flex-direction:column; align-items:flex-start; }
+.s-lbl { font-size:14px; color:#1a1a1a; font-weight:600; }
+.s-sub { font-size:11px; color:#999; margin-top:2px; }
+
+/* Toggle */
+.tog { position:relative; width:48px; height:28px; flex-shrink:0; }
+.tog input { opacity:0; width:0; height:0; }
+.tog-sl {
+  position:absolute; inset:0; background:#ccc;
+  border-radius:28px; cursor:pointer; transition:background 0.2s;
+}
+.tog-sl::before {
+  content:''; position:absolute;
+  height:22px; width:22px; left:3px; bottom:3px;
+  background:#fff; border-radius:50%;
+  transition:transform 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
+.tog input:checked + .tog-sl { background:#e08828; }
+.tog input:checked + .tog-sl::before { transform:translateX(20px); }
+
+/* Select / Range */
+.s-sel {
+  background:#f0f0f2; border:1px solid #ccc; border-radius:9px;
+  padding:6px 10px; font-size:13px; color:#222; outline:none;
+  font-family:inherit; max-width:155px;
+}
+.s-rng { width:110px; accent-color:#e08828; }
+
+/* Voice list */
+.vlist { width:100%; border-radius:10px; overflow:hidden; background:#fff; margin-top:6px; }
+.vitem {
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  border-bottom:1px solid #f0f0f2; cursor:pointer; font-size:13px;
+  color:#333; transition:background 0.1s;
+}
+.vitem:last-child { border-bottom:none; }
+.vitem:active { background:#f5f5f5; }
+.vitem.sel { color:#b06000; font-weight:700; }
+.vdot { width:9px; height:9px; border-radius:50%; background:#ddd; flex-shrink:0; }
+.vitem.sel .vdot { background:#e08828; }
+
+/* History */
+.h-acts { display:flex; gap:8px; padding:10px 16px 4px; }
+.h-clear {
+  flex:1; padding:10px; border:none; border-radius:10px;
+  background:#ffe0e0; color:#b00; font-size:13px; font-weight:700; cursor:pointer;
+}
+.h-list { padding:4px 16px 16px; }
+.h-empty { text-align:center; color:#bbb; font-size:14px; padding:32px 0; }
+.h-item {
+  background:#fff; border-radius:12px; padding:12px 14px;
+  margin-bottom:7px; box-shadow:0 1px 4px rgba(0,0,0,0.07);
+  cursor:pointer; transition:background 0.1s; position:relative;
+}
+.h-item:active { background:#f8f8f8; }
+.h-time { font-size:10px; color:#ccc; position:absolute; top:12px; right:14px; }
+.h-expr { font-size:12px; color:#999; margin-bottom:4px; font-family:'Roboto Mono',monospace; }
+.h-num { font-size:22px; font-weight:600; color:#1a1a1a; font-family:'Roboto Mono',monospace; }
+.h-viet { font-size:11px; color:#aaa; font-style:italic; margin-top:3px; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button class="icon-btn" onclick="openSettings()">≡</button>
+    <div class="topbar-title">
+      <div class="t1">MÁY TÍNH ĐỌC KẾT QUẢ</div>
+      <div class="t2">NHẤN = HAI LẦN ĐỂ ĐỌC LẠI</div>
+    </div>
+    <button class="icon-btn" onclick="openHistory()">🕘</button>
+  </div>
+
+  <!-- DISPLAY -->
+  <div class="display-wrap">
+
+    <!-- Zone A: Phép tính đã nhập -->
+    <div class="zone-a">
+      <div class="zone-lbl">PHÉP TÍNH ĐÃ NHẬP</div>
+      <div class="zone-expr-text" id="el-expr">—</div>
+    </div>
+
+    <!-- Zone B: Kết quả số -->
+    <div class="zone-b">
+      <div class="zone-lbl">KẾT QUẢ</div>
+      <div class="zone-number" id="el-num">0</div>
+    </div>
+
+    <!-- Zone C: wave bên trái | chữ Việt bên phải -->
+    <div class="zone-c">
+      <div class="zone-wave-side">
+        <div class="wave" id="wave"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="wave-lbl" id="wave-lbl">ĐANG ĐỌC</div>
+      </div>
+      <div class="zone-viet-side">
+        <div class="zone-viet" id="el-viet">—</div>
+        <div class="zone-cur" id="el-cur"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="btn-grid">
+
+    <!-- Row 1: AC  %  +/−  ÷ -->
+    <div class="btn-row r4">
+      <button class="btn btn-ac" onclick="clearAll()">AC</button>
+      <button class="btn btn-fn" onclick="percent()">%</button>
+      <button class="btn btn-fn" onclick="toggleSign()">+/−</button>
+      <button class="btn btn-op" onclick="appendOp('÷')">÷</button>
+    </div>
+
+    <!-- Row 2: 7 8 9 × -->
+    <div class="btn-row r4">
+      <button class="btn btn-n" onclick="appendNum('7')">7</button>
+      <button class="btn btn-n" onclick="appendNum('8')">8</button>
+      <button class="btn btn-n" onclick="appendNum('9')">9</button>
+      <button class="btn btn-op" onclick="appendOp('×')">×</button>
+    </div>
+
+    <!-- Row 3: 4 5 6 − -->
+    <div class="btn-row r4">
+      <button class="btn btn-n" onclick="appendNum('4')">4</button>
+      <button class="btn btn-n" onclick="appendNum('5')">5</button>
+      <button class="btn btn-n" onclick="appendNum('6')">6</button>
+      <button class="btn btn-op" onclick="appendOp('−')">−</button>
+    </div>
+
+    <!-- Row 4: 1 2 3 + -->
+    <div class="btn-row r4">
+      <button class="btn btn-n" onclick="appendNum('1')">1</button>
+      <button class="btn btn-n" onclick="appendNum('2')">2</button>
+      <button class="btn btn-n" onclick="appendNum('3')">3</button>
+      <button class="btn btn-op" onclick="appendOp('+')">+</button>
+    </div>
+
+    <!-- Row 5: 0  00  ,  ⌫  = -->
+    <div class="btn-row r5">
+      <button class="btn btn-n" onclick="appendNum('00')" style="font-size:20px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800">00</button>
+      <button class="btn btn-n" onclick="appendNum('0')">0</button>
+      <button class="btn btn-n" onclick="appendDot()" style="font-size:26px">,</button>
+      <button class="btn btn-back" onclick="backspace()">⌫</button>
+      <button class="btn btn-eq" id="btn-eq" onclick="onEqPress()">=</button>
+    </div>
+
+  </div>
+
+  <!-- ══ SETTINGS OVERLAY ══ -->
+  <div class="overlay" id="ov-set" onclick="bgClose(event,'ov-set')">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>⚙️ Cài đặt</h2>
+        <button class="panel-close" onclick="closeSettings()">✕</button>
+      </div>
+
+      <div class="s-sec">
+        <h3>🎙 Giọng đọc</h3>
+        <div class="s-item">
+          <div><div class="s-lbl">Đọc kết quả khi nhấn =</div><div class="s-sub">Tự đọc sau khi tính xong</div></div>
+          <label class="tog"><input type="checkbox" id="tog-speak" checked onchange="save()"><span class="tog-sl"></span></label>
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Đọc phím số khi nhấn</div><div class="s-sub">VD: nhấn 5 → đọc "năm"</div></div>
+          <label class="tog"><input type="checkbox" id="tog-readkeys" onchange="save()"><span class="tog-sl"></span></label>
+        </div>
+        <div class="s-item col">
+          <div class="s-lbl" style="margin-bottom:4px">Chọn giọng đọc</div>
+          <div id="voice-wrap" style="width:100%"></div>
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Tốc độ đọc</div><div class="s-sub" id="lbl-rate">0.9×</div></div>
+          <input type="range" class="s-rng" id="sl-rate" min="0.5" max="2.0" step="0.1" value="0.9" oninput="updRate(this.value)">
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Cao độ giọng</div><div class="s-sub" id="lbl-pitch">1.0</div></div>
+          <input type="range" class="s-rng" id="sl-pitch" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updPitch(this.value)">
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Âm lượng</div><div class="s-sub" id="lbl-vol">100%</div></div>
+          <input type="range" class="s-rng" id="sl-vol" min="0" max="1" step="0.05" value="1" oninput="updVol(this.value)">
+        </div>
+      </div>
+
+      <div class="s-sec">
+        <h3>📳 Phản hồi</h3>
+        <div class="s-item">
+          <div><div class="s-lbl">Rung khi nhấn phím</div><div class="s-sub">Rung nhẹ mỗi lần bấm</div></div>
+          <label class="tog"><input type="checkbox" id="tog-vib" checked onchange="save()"><span class="tog-sl"></span></label>
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Âm thanh click</div><div class="s-sub">Tiếng bíp nhỏ khi nhấn</div></div>
+          <label class="tog"><input type="checkbox" id="tog-sound" onchange="save()"><span class="tog-sl"></span></label>
+        </div>
+      </div>
+
+      <div class="s-sec">
+        <h3>🔢 Số & Tiền tệ</h3>
+        <div class="s-item">
+          <div><div class="s-lbl">Làm tròn kết quả</div><div class="s-sub">Chọn cách làm tròn kết quả</div></div>
+          <select class="s-sel" id="sel-round" onchange="save()">
+            <option value="-1">Không làm tròn</option>
+            <option value="1000">4 bỏ 6 lấy (hàng nghìn)</option>
+            <option value="0">Số nguyên (hàng đơn vị)</option>
+            <option value="1">1 chữ số thập phân</option>
+            <option value="2" selected>2 chữ số thập phân</option>
+            <option value="3">3 chữ số thập phân</option>
+            <option value="4">4 chữ số thập phân</option>
+          </select>
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Dấu phân cách nghìn</div><div class="s-sub">VD: 1.000.000</div></div>
+          <label class="tog"><input type="checkbox" id="tog-sep" checked onchange="save()"><span class="tog-sl"></span></label>
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Đơn vị tiền tệ</div><div class="s-sub">Hiển thị cạnh kết quả</div></div>
+          <select class="s-sel" id="sel-unit" onchange="save()">
+            <option value="">Không hiện</option>
+            <option value="đ" selected>đ (Đồng)</option>
+            <option value="VNĐ">VNĐ</option>
+            <option value="$">$ (USD)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="s-sec" style="padding-bottom:18px">
+        <h3>🖥 Hiển thị</h3>
+        <div class="s-item">
+          <div><div class="s-lbl">Hiện kết quả bằng chữ</div><div class="s-sub">Đọc số bằng tiếng Việt</div></div>
+          <label class="tog"><input type="checkbox" id="tog-viet" checked onchange="save()"><span class="tog-sl"></span></label>
+        </div>
+        <div class="s-item">
+          <div><div class="s-lbl">Cỡ chữ số kết quả</div><div class="s-sub" id="lbl-font">52px</div></div>
+          <input type="range" class="s-rng" id="sl-font" min="30" max="72" step="2" value="52" oninput="updFont(this.value)">
+        </div>
+      </div>
+    </div>
+    <div style="flex:1" onclick="closeSettings()"></div>
+  </div>
+
+  <!-- ══ HISTORY OVERLAY ══ -->
+  <div class="overlay" id="ov-hist" onclick="bgClose(event,'ov-hist')">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>🕘 Lịch sử tính</h2>
+        <button class="panel-close" onclick="closeHistory()">✕</button>
+      </div>
+      <div class="h-acts">
+        <button class="h-clear" onclick="clearHistory()">🗑 Xoá tất cả lịch sử</button>
+      </div>
+      <div class="h-list" id="h-list"><div class="h-empty">Chưa có phép tính nào</div></div>
+    </div>
+    <div style="flex:1" onclick="closeHistory()"></div>
+  </div>
+
+</div><!-- /phone -->
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────
+let cur='0', expr='', justCalc=false, lastViet='';
+let waitingForOperand=false;  // true sau khi nhấn toán tử
+let history=[], allVoices=[], lastEqTime=0;
+let cfg={
+  speak:true, readKeys:false, vib:true, sound:false,
+  rate:0.9, pitch:1.0, vol:1, voiceIdx:-1,
+  round:2, sep:true, unit:'đ',
+  showViet:true, fontSize:52
+};
+
+const elExpr  = document.getElementById('el-expr');
+const elNum   = document.getElementById('el-num');
+const elViet  = document.getElementById('el-viet');
+const elCurEl = document.getElementById('el-cur');
+const waveEl  = document.getElementById('wave');
+const waveLbl = document.getElementById('wave-lbl');
+const btnEq   = document.getElementById('btn-eq');
+
+const digitNames=['không','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
+
+// ── DISPLAY ──────────────────────────────────────────────────────
+function fmtNum(s){
+  if(!cfg.sep||s==='Lỗi')return s;
+  const p=s.split('.');
+  p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  return p.join(',');
+}
+
+function updateDisplay(){
+  // Zone A — hiển thị phép tính
+  if(expr.includes('\n')){
+    const parts=expr.split('\n');
+    // dòng 1: phép tính cũ + kết quả (mờ), dòng 2: phép mới (rõ)
+    elExpr.innerHTML=
+      '<span style="opacity:0.45;font-size:11px">'+escHtml(parts[0])+'</span>'+
+      '<br><span>'+escHtml(parts[1])+'</span>';
+  } else {
+    elExpr.textContent = expr || '—';
+  }
+
+  // Zone B
+  const disp = cur==='Lỗi'?'Lỗi':fmtNum(cur);
+  elNum.textContent = disp + (cfg.unit&&justCalc&&cur!=='Lỗi'?' '+cfg.unit:'');
+  elNum.style.fontSize = cfg.fontSize+'px';
+
+  // Zone C
+  if(cfg.showViet && lastViet && justCalc){
+    elViet.textContent = lastViet;
+    elViet.classList.add('on');
+    elCurEl.textContent = cfg.unit||'';
+    elCurEl.classList.add('on');
+  } else {
+    elViet.textContent = justCalc?'':( cur==='0'?'—':'' );
+    elViet.classList.remove('on');
+    elCurEl.textContent='';
+    elCurEl.classList.remove('on');
+  }
+}
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function popAnim(){
+  elNum.classList.remove('pop');
+  void elNum.offsetWidth;
+  elNum.classList.add('pop');
+}
+
+// ── CALC ──────────────────────────────────────────────────────────
+function appendNum(n){
+  doFeedback();
+  if(cfg.readKeys) speakText(n==='00'?'không không':digitNames[parseInt(n)]||n);
+  if(justCalc){cur='';expr='';justCalc=false;lastViet='';waitingForOperand=false;}
+  if(waitingForOperand){
+    cur=(n==='00')?'0':n;
+    waitingForOperand=false;
+    updateDisplay();return;
+  }
+  if(n==='00'){if(cur==='0')return;cur+='00';}
+  else{if(cur==='0'&&n!=='.')cur=n;else cur+=n;}
+  updateDisplay();
+}
+
+function appendDot(){
+  doFeedback();
+  if(justCalc){cur='0';expr='';justCalc=false;lastViet='';waitingForOperand=false;}
+  if(waitingForOperand){cur='0';waitingForOperand=false;}
+  if(!cur.includes('.'))cur+='.';
+  updateDisplay();
+}
+
+function appendOp(op){
+  doFeedback();
+
+  if(justCalc){
+    // Vừa nhấn = xong → dùng kết quả làm số đầu
+    expr=cur+' '+op+' ';
+    justCalc=false; lastViet='';
+    waitingForOperand=true;
+    updateDisplay(); return;
+  }
+
+  if(waitingForOperand){
+    // Nhấn toán tử liên tiếp (chưa nhập số mới) → chỉ thay toán tử
+    // Lấy phần active của expr (sau \n nếu có)
+    if(expr.includes('\n')){
+      const parts=expr.split('\n');
+      // thay toán tử ở cuối dòng active
+      parts[1]=parts[1].replace(/[+−×÷]\s*$/,'')+op+' ';
+      expr=parts.join('\n');
+    } else {
+      expr=expr.replace(/[+−×÷]\s*$/,'')+op+' ';
+    }
+    updateDisplay(); return;
+  }
+
+  if(expr===''){
+    // Số đầu tiên, chưa có phép tính nào
+    expr=cur+' '+op+' ';
+  } else {
+    // Đã có phép tính, đã nhập số thứ 2 → tính trung gian
+    const activeExpr=expr.includes('\n')?expr.split('\n').pop():expr;
+    const full=activeExpr+cur;
+    const safe=full.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-');
+    let res;
+    try{
+      res=eval(safe);
+      if(!isFinite(res)){cur='Lỗi';expr='';updateDisplay();return;}
+      res=applyRound(res);
+      cur=String(res);
+    }catch(e){cur='Lỗi';expr='';updateDisplay();return;}
+    // Zone A: dòng mờ = phép cũ + kết quả, dòng rõ = phép mới
+    expr=full+' = '+cur+'\n'+cur+' '+op+' ';
+  }
+
+  waitingForOperand=true;
+  updateDisplay();
+}
+
+function percent(){doFeedback();cur=String(parseFloat(cur)/100);updateDisplay();}
+
+function toggleSign(){
+  doFeedback();
+  if(cur!=='0')cur=cur.startsWith('-')?cur.slice(1):'-'+cur;
+  updateDisplay();
+}
+
+function backspace(){
+  doFeedback();
+  if(cur.length>1)cur=cur.slice(0,-1);else cur='0';
+  updateDisplay();
+}
+
+function clearAll(){
+  doFeedback();
+  cur='0';expr='';justCalc=false;lastViet='';waitingForOperand=false;
+  elViet.textContent='—';elViet.classList.remove('on');
+  elCurEl.textContent='';elCurEl.classList.remove('on');
+  elNum.classList.remove('speaking');
+  window.speechSynthesis&&window.speechSynthesis.cancel();
+  stopWave(); updateDisplay();
+}
+
+function calculate(){
+  if(expr==='')return;
+  // Nếu expr có \n (phép tính trung gian), chỉ lấy phần sau \n để tính
+  const activeExpr = expr.includes('\n') ? expr.split('\n').pop() : expr;
+  const full = activeExpr + cur;
+  const safe=full.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-');
+  let res;
+  try{
+    res=eval(safe);
+    if(!isFinite(res)){cur='Lỗi';expr=full+' =';justCalc=true;updateDisplay();return;}
+    res=applyRound(res);
+    cur=String(res);
+  }catch(e){cur='Lỗi';expr=full+' =';justCalc=true;updateDisplay();return;}
+
+  expr=full+' =';
+  justCalc=true;
+  waitingForOperand=false;
+  lastViet=numberToVietnamese(res);
+  popAnim(); updateDisplay();
+
+  const now=new Date();
+  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  history.unshift({expr:full+' =',result:cur,viet:lastViet,time:t});
+  if(history.length>200)history.pop();
+
+  if(cfg.speak){
+    speakVietnamese(lastViet + getUnitText());
+  }
+}
+
+// Double-tap = to re-read
+function onEqPress(){
+  doFeedback();
+  if(justCalc){
+    // Đã có kết quả: chỉ đọc lại, không tính lại
+    if(lastViet) speakVietnamese(lastViet + getUnitText());
+    return;
+  }
+  calculate();
+}
+
+// ── FEEDBACK ──────────────────────────────────────────────────────
+function doFeedback(){
+  // Rung được xử lý qua touchstart trực tiếp trên .btn
+  if(cfg.sound)playClick();
+}
+let audioCtx;
+function playClick(){
+  try{
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    o.frequency.value=880;g.gain.value=0.035;
+    o.start();o.stop(audioCtx.currentTime+0.032);
+  }catch(e){}
+}
+
+// ── TIẾNG VIỆT ────────────────────────────────────────────────────
+const _u=['','một','hai','ba','bốn','năm','sáu','bảy','tám','chín'];
+const _t=['mười','mười một','mười hai','mười ba','mười bốn','mười lăm',
+          'mười sáu','mười bảy','mười tám','mười chín'];
+function rb1k(n){
+  if(n===0)return'';
+  if(n<10)return _u[n];
+  if(n<20)return _t[n-10];
+  if(n<100){
+    const t=Math.floor(n/10),u=n%10;
+    let s=_u[t]+' mươi';
+    if(u===1)s+=' mốt';else if(u===5)s+=' lăm';else if(u>0)s+=' '+_u[u];
+    return s;
+  }
+  const h=Math.floor(n/100),r=n%100;
+  let s=_u[h]+' trăm';
+  if(r>0&&r<10)s+=' lẻ '+_u[r];else if(r>0)s+=' '+rb1k(r);
+  return s;
+}
+function numberToVietnamese(num){
+  if(isNaN(num))return'không xác định';
+  if(num===0)return'không';
+  let neg=num<0;num=Math.abs(num);
+  let ip=Math.floor(num),dp=Math.round((num-ip)*1e10)/1e10;
+  let is='';
+  if(ip===0){is='không';}
+  else{
+    const lb=['','nghìn','triệu','tỷ'];
+    const gs=[];let tmp=ip,gi=0;
+    while(tmp>0){gs.push({v:tmp%1000,l:lb[gi]||''});tmp=Math.floor(tmp/1000);gi++;}
+    gs.reverse();
+    is=gs.map((g,i)=>{
+      if(g.v===0)return'';
+      let s='';
+      if(i>0&&g.v<100)s+='không trăm ';
+      s+=rb1k(g.v);if(g.l)s+=' '+g.l;return s;
+    }).filter(Boolean).join(' ');
+  }
+  let r=(neg?'âm ':'')+is;
+  if(dp>0){
+    const ds=String(dp).split('.')[1]||'';
+    r+=' phẩy '+ds.split('').map(d=>_u[parseInt(d)]||'không').join(' ');
+  }
+  return r.trim();
+}
+
+// ── SPEECH ────────────────────────────────────────────────────────
+function getVoice(){
+  const vs=window.speechSynthesis.getVoices();
+  if(cfg.voiceIdx>=0&&vs[cfg.voiceIdx])return vs[cfg.voiceIdx];
+  return vs.find(v=>v.lang==='vi-VN'||v.lang.startsWith('vi'))||null;
+}
+function applyRound(res){
+  if(cfg.round===1000||cfg.round==='1000'){
+    const sign = res < 0 ? -1 : 1;
+    const abs = Math.abs(res);
+    // Chỉ làm tròn khi kết quả >= 1000, dưới 1000 giữ nguyên
+    if(abs < 1000) return res;
+    const remainder = abs % 1000;
+    const rounded = remainder <= 500 ? abs - remainder : abs - remainder + 1000;
+    return sign * rounded;
+  }
+  if(cfg.round>=0) return parseFloat(res.toFixed(cfg.round));
+  return Math.round(res*1e10)/1e10;
+}
+function getUnitText(){
+  if(!cfg.unit) return '';
+  if(cfg.unit==='đ') return ' đồng';
+  if(cfg.unit==='VNĐ') return ' việt nam đồng';
+  if(cfg.unit==='$') return ' đô la';
+  return '';
+}
+function speakText(text){
+  if(!('speechSynthesis' in window))return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='vi-VN';u.rate=cfg.rate;u.pitch=cfg.pitch;u.volume=cfg.vol;
+  const v=getVoice();if(v)u.voice=v;
+  window.speechSynthesis.speak(u);
+}
+function speakVietnamese(text){
+  if(!('speechSynthesis' in window))return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='vi-VN';u.rate=cfg.rate;u.pitch=cfg.pitch;u.volume=cfg.vol;
+  const trySpeak=()=>{const v=getVoice();if(v)u.voice=v;window.speechSynthesis.speak(u);};
+  u.onstart=()=>{
+    elNum.classList.add('speaking');
+    waveEl.classList.add('on');waveLbl.classList.add('on');
+    btnEq.classList.add('speaking-eq');
+  };
+  u.onend=u.onerror=stopWave;
+  if(window.speechSynthesis.getVoices().length===0){
+    window.speechSynthesis.onvoiceschanged=trySpeak;
+  }else{trySpeak();}
+}
+function stopWave(){
+  elNum.classList.remove('speaking');
+  waveEl.classList.remove('on');waveLbl.classList.remove('on');
+  btnEq.classList.remove('speaking-eq');
+}
+function loadVoices(){allVoices=window.speechSynthesis.getVoices();renderVoices();}
+function renderVoices(){
+  const wrap=document.getElementById('voice-wrap');
+  if(!wrap)return;
+  const vi=allVoices.filter(v=>v.lang==='vi-VN'||v.lang.startsWith('vi'));
+  const show=vi.length>0?vi:allVoices.slice(0,10);
+  if(show.length===0){
+    wrap.innerHTML='<div style="font-size:12px;color:#bbb;padding:5px 0">Không tìm thấy giọng đọc trên thiết bị</div>';
+    return;
+  }
+  wrap.innerHTML='<div class="vlist">'+show.map(v=>{
+    const ri=allVoices.indexOf(v);
+    const isSel=cfg.voiceIdx===ri||(cfg.voiceIdx===-1&&ri===allVoices.indexOf(show[0]));
+    return`<div class="vitem ${isSel?'sel':''}" onclick="selectVoice(${ri})">
+      <div class="vdot"></div>
+      <div>
+        <div style="font-weight:700;font-size:13px">${v.name}</div>
+        <div style="font-size:10px;color:#bbb">${v.lang}${v.localService?' · Offline':' · Online'}</div>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+function selectVoice(idx){
+  cfg.voiceIdx=idx;renderVoices();
+  speakText('Xin chào, đây là giọng thử nghiệm');
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+function openSettings(){loadVoices();applyUI();document.getElementById('ov-set').classList.add('open');}
+function closeSettings(){document.getElementById('ov-set').classList.remove('open');save();}
+function openHistory(){renderHistory();document.getElementById('ov-hist').classList.add('open');}
+function closeHistory(){document.getElementById('ov-hist').classList.remove('open');}
+function bgClose(e,id){if(e.target===document.getElementById(id)){document.getElementById(id).classList.remove('open');save();}}
+
+function applyUI(){
+  const s=(id,v)=>{const e=document.getElementById(id);if(e){if(typeof v==='boolean')e.checked=v;else e.value=v;}};
+  s('tog-speak',cfg.speak);s('tog-readkeys',cfg.readKeys);
+  s('tog-vib',cfg.vib);s('tog-sound',cfg.sound);s('tog-sep',cfg.sep);s('tog-viet',cfg.showViet);
+  s('sl-rate',cfg.rate);s('sl-pitch',cfg.pitch);s('sl-vol',cfg.vol);
+  s('sel-round',String(cfg.round));s('sel-unit',cfg.unit);s('sl-font',cfg.fontSize);
+  document.getElementById('lbl-rate').textContent=cfg.rate.toFixed(1)+'×';
+  document.getElementById('lbl-pitch').textContent=cfg.pitch.toFixed(1);
+  document.getElementById('lbl-vol').textContent=Math.round(cfg.vol*100)+'%';
+  document.getElementById('lbl-font').textContent=cfg.fontSize+'px';
+}
+function save(){
+  const cb=id=>document.getElementById(id).checked;
+  const vl=id=>document.getElementById(id).value;
+  cfg.speak=cb('tog-speak');cfg.readKeys=cb('tog-readkeys');
+  cfg.vib=cb('tog-vib');cfg.sound=cb('tog-sound');cfg.sep=cb('tog-sep');cfg.showViet=cb('tog-viet');
+  cfg.round=parseInt(vl('sel-round'));cfg.unit=vl('sel-unit');
+  updateDisplay();
+}
+function updRate(v){cfg.rate=parseFloat(v);document.getElementById('lbl-rate').textContent=parseFloat(v).toFixed(1)+'×';}
+function updPitch(v){cfg.pitch=parseFloat(v);document.getElementById('lbl-pitch').textContent=parseFloat(v).toFixed(1);}
+function updVol(v){cfg.vol=parseFloat(v);document.getElementById('lbl-vol').textContent=Math.round(v*100)+'%';}
+function updFont(v){cfg.fontSize=parseInt(v);document.getElementById('lbl-font').textContent=v+'px';elNum.style.fontSize=v+'px';}
+
+// ── HISTORY ───────────────────────────────────────────────────────
+function renderHistory(){
+  const el=document.getElementById('h-list');
+  if(history.length===0){el.innerHTML='<div class="h-empty">Chưa có phép tính nào</div>';return;}
+  el.innerHTML=history.map((h,i)=>`
+    <div class="h-item" onclick="useHistory(${i})">
+      <div class="h-time">${h.time}</div>
+      <div class="h-expr">${h.expr}</div>
+      <div class="h-num">${fmtNum(h.result)}${cfg.unit?' '+cfg.unit:''}</div>
+      <div class="h-viet">${h.viet}</div>
+    </div>
+  `).join('');
+}
+function useHistory(i){const h=history[i];cur=h.result;expr='';justCalc=true;lastViet=h.viet;updateDisplay();closeHistory();}
+function clearHistory(){history=[];renderHistory();}
+
+// ── KEYBOARD ─────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key>='0'&&e.key<='9')appendNum(e.key);
+  else if(e.key==='.'||e.key===',')appendDot();
+  else if(e.key==='+')appendOp('+');
+  else if(e.key==='-')appendOp('−');
+  else if(e.key==='*')appendOp('×');
+  else if(e.key==='/'){e.preventDefault();appendOp('÷');}
+  else if(e.key==='Enter'||e.key==='=')onEqPress();
+  else if(e.key==='Backspace')backspace();
+  else if(e.key==='Escape')clearAll();
+});
+
+// ── INIT ─────────────────────────────────────────────────────────
+if('speechSynthesis' in window){window.speechSynthesis.getVoices();window.speechSynthesis.onvoiceschanged=loadVoices;}
+
+// Đăng ký Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js')
+      .then(()=>console.log('SW registered'))
+      .catch(e=>console.log('SW error:',e));
+  });
+}
+
+// Rung: dùng event delegation trên toàn phone, bắt mọi tap vào .btn
+document.getElementById('phone').addEventListener('touchstart', function(e){
+  const btn = e.target.closest('.btn');
+  if(btn && cfg.vib){
+    try{ navigator.vibrate(30); }catch(er){}
+  }
+}, {passive:true});
+
+updateDisplay();
+</script>
+</body>
+</html>
