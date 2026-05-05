@@ -1,10 +1,10 @@
 const CACHE_NAME = 'maytinh-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  '/maytinh2/',
+  '/maytinh2/index.html',
+  '/maytinh2/manifest.json',
+  '/maytinh2/icons/icon-192.png',
+  '/maytinh2/icons/icon-512.png',
   'https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap'
 ];
 
@@ -54,7 +54,7 @@ self.addEventListener('fetch', e => {
         return response;
       }).catch(() => {
         // Offline fallback
-        return caches.match('/index.html');
+        return caches.match('/maytinh2/index.html');
       });
     })
   );

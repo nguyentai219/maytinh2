@@ -15,16 +15,16 @@
 <meta name="description" content="Máy tính tự đọc kết quả bằng tiếng Việt">
 
 <!-- PWA Manifest -->
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/maytinh2/manifest.json">
 
 <!-- iOS Icons -->
-<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
-<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/maytinh2/icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="/maytinh2/icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="120x120" href="/maytinh2/icons/icon-120.png">
 
 <!-- Favicon -->
-<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/maytinh2/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/maytinh2/icons/icon-32.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -926,7 +926,7 @@ if('speechSynthesis' in window){window.speechSynthesis.getVoices();window.speech
 // Đăng ký Service Worker
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('sw.js')
+    navigator.serviceWorker.register('/maytinh2/sw.js')
       .then(()=>console.log('SW registered'))
       .catch(e=>console.log('SW error:',e));
   });

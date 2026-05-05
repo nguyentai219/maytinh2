@@ -2,8 +2,8 @@
   "name": "Máy Tính Đọc Kết Quả",
   "short_name": "Máy Tính",
   "description": "Máy tính tự đọc kết quả bằng tiếng Việt",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/maytinh2/",
+  "scope": "/maytinh2/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#c4c4c4",
@@ -71,7 +71,12 @@
       "short_name": "Tính",
       "description": "Mở máy tính đọc kết quả",
       "url": "/",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }
