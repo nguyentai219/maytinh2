@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maytinh-v1';
+const CACHE_NAME = 'mt-maytinh2-v2';
 const ASSETS = [
   '/maytinh2/',
   '/maytinh2/index.html',
@@ -21,11 +21,13 @@ self.addEventListener('install', e => {
 });
 
 // Kích hoạt: xóa cache cũ
+// Chỉ xoá cache CŨ CỦA APP NÀY (tiền tố riêng) — bộ nhớ cache dùng chung cả tên miền
+// nguyentai219.github.io, xoá hết sẽ làm mất bản offline của các app khác (Mủ Cao Su, Quản Lý Heo...).
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        keys.filter(k => (k.startsWith('mt-maytinh2-') || k === 'maytinh-v1') && k !== CACHE_NAME).map(k => caches.delete(k))
       )
     )
   );
